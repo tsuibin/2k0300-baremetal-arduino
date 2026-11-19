@@ -5,6 +5,19 @@
 #ifndef PLATFORM_H
 #define PLATFORM_H
 
+#include <stdint.h>
+
+/*
+ * MMIO 非缓存访问窗口（DMW1，VA[63:60]=8, MAT=强序非缓存）
+ * 实证来源：OpenLA132 仿真中，缓存属性的 MMIO 写会被吸收（DAT 写丢失）。
+ * 所有外设寄存器访问必须经此宏，禁止直接解引用物理地址。
+ */
+#define MMIO_BASE_UNCACHED  0x8000000000000000ull
+#define MMIO32(addr) \
+    (*(volatile unsigned int *)(uintptr_t)(MMIO_BASE_UNCACHED | (uint64_t)(uintptr_t)(addr)))
+#define MMIO8(addr) \
+    (*(volatile unsigned char *)(uintptr_t)(MMIO_BASE_UNCACHED | (uint64_t)(uintptr_t)(addr)))
+
 /* ---------- 时钟 ---------- */
 #define OSC_CLK_HZ          100000000u   /* 晶振 100MHz */
 #define APB_CLK_HZ          200000000u   /* APB 外设时钟 200MHz（U-Boot fixed-clock） */

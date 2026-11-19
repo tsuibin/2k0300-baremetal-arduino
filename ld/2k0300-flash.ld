@@ -13,6 +13,7 @@ FLASH_ORIGIN = 0x1c000000;   /* TODO(V1): 以数据手册/实测为准 */
 RAM_ORIGIN   = 0x00010000;   /* DDR 低端，避开可能被 BootROM/SPL 使用的区域 */
 RAM_SIZE     = 8M;
 STACK_TOP    = RAM_ORIGIN + RAM_SIZE;
+_stack_top   = STACK_TOP;
 
 MEMORY
 {

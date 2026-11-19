@@ -2,7 +2,7 @@
 #include "platform.h"
 #include "baremetal.h"
 
-static volatile uint8_t *uart = (volatile uint8_t *)UART0_BASE;
+#define uart ((volatile uint8_t *)(uintptr_t)(MMIO_BASE_UNCACHED | UART0_BASE))
 
 static inline void reg_write(unsigned off, uint8_t v) { uart[off] = v; }
 static inline uint8_t reg_read(unsigned off)          { return uart[off]; }

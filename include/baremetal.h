@@ -4,6 +4,10 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* uart.c */
 void uart_init(void);
 void uart_putc(char c);
@@ -17,5 +21,9 @@ int  gpio_read(int pin);
 
 /* main.c */
 void delay(volatile unsigned int loops);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

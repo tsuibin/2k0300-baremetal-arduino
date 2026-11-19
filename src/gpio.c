@@ -9,7 +9,9 @@
 #include "platform.h"
 #include "baremetal.h"
 
-#define GPIO_REG(off) (*(volatile uint8_t *)(uintptr_t)(GPIO_BASE + (unsigned)(off)))
+/* GPIO 走 DMW1 非缓存窗口（见 platform.h MMIO 宏说明） */
+#define GPIO_REG(off) \
+    MMIO8(GPIO_BASE + (unsigned)(off))
 
 void gpio_set_output(int pin)
 {

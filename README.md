@@ -71,15 +71,34 @@ UART0 115200 波特率分频 = 200MHz / 16 / 115200 ≈ **108**。
 ## 3. 代码骨架说明
 
 ```
-src/start.S        LoongArch64 启动汇编：栈、bss 清零、进 main
+src/start.S        LoongArch64 启动汇编 v2：GPR 清零、DMW0/DMW1、CRMD、
+                   ertn 进直连模式、.data 装载、bss 清零（CSR 序列已按
+                   OpenLACores 官方 crt 的仿真验证写法校准）
 src/main.c         裸机入口：串口打印 + GPIO85 LED 闪烁（蜂鸟板板载 LED，低电平点亮）
-src/uart.c/.h      16550 兼容 UART0 驱动（0x16100000，APB 200MHz）
-src/gpio.c/.h      2K0300 GPIO 驱动（bytewise，0x16104000）
-include/platform.h 全部寄存器地址常量（与 dtsi 对齐）
+src/uart.c/.h      16550 兼容 UART0 驱动（0x16100000，APB 200MHz，DMW1 非缓存窗口）
+src/gpio.c/.h      2K0300 GPIO 驱动（bytewise，0x16104000，DMW1 非缓存窗口）
+include/platform.h 寄存器地址常量（与 dtsi 对齐）+ MMIO8/MMIO32 非缓存访问宏
 ld/2k0300-flash.ld XIP 链接脚本（.text 在 Flash 映射区，.data/.bss/栈在 DDR）
 tools/mkimage.py   镜像打包占位脚本（S0 结论出来后填头部字段）
 Makefile           loongarch64 bare-metal 交叉编译
+
+arduino/           Arduino 核心（wiring 层，见下）
+examples/Blink/    第一个 Arduino sketch
 ```
+
+### Arduino 核心层（arduino/）
+
+在裸机驱动之上封装标准 Arduino API，sketch 用 `setup()/loop()` 语法编写：
+
+| 文件 | 内容 |
+|---|---|
+| `Arduino.h` | 对外头文件（sketch 唯一需要 include 的） |
+| `wiring.c/.h` | `pinMode/digitalWrite/digitalRead/delay/millis/micros`；`millis` 用 `rdtime.d` 稳定计数器（频率 TODO(T1) 板上校准）；板载 LED 低电平点亮在 wiring 层自动反相 |
+| `Serial.cpp/.h` | HardwareSerial 轮询最小集：`print/println/available/read/flush` |
+| `crtmain.cpp` | sketch 入口桥：`main → init → setup → loop 循环` |
+
+分层约定：`src/`（寄存器驱动）→ `arduino/`（API 层）→ `examples/`（sketch）。
+MMIO 访问必须经 `platform.h` 的 DMW1 非缓存窗口宏（仿真实证缓存属性写会被吸收）。
 
 ### 工具链
 
@@ -94,6 +113,7 @@ Makefile           loongarch64 bare-metal 交叉编译
 # 已用官方 gcc-8.3 工具链验证通过（2026-11-20）：
 make CROSS=/opt/loongson-gnu-toolchain-8.3-x86_64-loongarch64-linux-gnu-rc1.6/bin/loongarch64-linux-gnu-
 # 生成 blink.elf（入口 0x1c000000）/ blink.bin（656B）/ blink.flash.bin（4KB 对齐）
+# 同时生成 arduino-blink.elf/.bin（Arduino 核心 + Blink sketch，2.5KB）及其烧写镜像
 ```
 
 > 注意：gcc-8.3 不支持 `-mno-relax`（gcc-10+ 才有），Makefile 已按 8.3 适配；
