@@ -1,0 +1,13 @@
+# 构建产物
+*.o
+*.elf
+*.bin
+*.map
+*.lst
+
+# IDE / 编辑器
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
